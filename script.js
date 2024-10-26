@@ -55,11 +55,14 @@ function setSeed() {
 
 function generateSudoku(level = 1) {
     const fillPercent = difficultyLevels[level].fillPercent;
-    sudokuGrid.style.gridTemplateColumns = `repeat(${gridSize}, 40px)`;
+sudokuGrid.style.gridTemplateColumns = `repeat(${gridSize}, ${gridSize === 16 ? 30 : 40}px)`;
+sudokuGrid.style.gridTemplateRows = `repeat(${gridSize}, ${gridSize === 16 ? 30 : 40}px)`;
+
     sudokuGrid.innerHTML = "";
 
     // Step 1: Generate a full, valid Sudoku solution grid
-    const solutionGrid = generateValidSolutionGrid();
+	const random = seededRandom(seed);
+    const solutionGrid = generateValidSolutionGrid(random);
 
     // Step 2: Clear cells based on difficulty level to create the puzzle
     const cellsToClear = Math.floor(gridSize * gridSize * (1 - fillPercent));
@@ -70,24 +73,24 @@ function generateSudoku(level = 1) {
 }
 
 // Generate a full valid solution for the grid using a backtracking approach
-function generateValidSolutionGrid() {
+function generateValidSolutionGrid(seed) {
     const grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
-    fillGrid(grid);
+    fillGrid(grid, seed);
     return grid;
 }
 
 // Helper function to fill the grid with a valid solution using backtracking
-function fillGrid(grid) {
+function fillGrid(grid, random) {
     const numbers = [...Array(gridSize).keys()].map(n => n + 1); // Numbers from 1 to gridSize
 
     for (let row = 0; row < gridSize; row++) {
         for (let col = 0; col < gridSize; col++) {
             if (grid[row][col] === null) {
-                shuffleArray(numbers); // Shuffle numbers for randomness
+                shuffleArray(numbers, random); // Use seeded shuffle for consistency
                 for (let num of numbers) {
                     if (isSafeToPlace(grid, row, col, num)) {
                         grid[row][col] = num;
-                        if (fillGrid(grid)) return true;
+                        if (fillGrid(grid, random)) return true;
                         grid[row][col] = null;
                     }
                 }
@@ -100,11 +103,12 @@ function fillGrid(grid) {
 
 function createPuzzleByClearingCells(solutionGrid, cellsToClear) {
     const puzzleGrid = solutionGrid.map(row => [...row]);
+    const random = seededRandom(seed); // Use seeded random here as well
     let cleared = 0;
 
     while (cleared < cellsToClear) {
-        const row = Math.floor(Math.random() * gridSize);
-        const col = Math.floor(Math.random() * gridSize);
+        const row = Math.floor(random() * gridSize);
+        const col = Math.floor(random() * gridSize);
         if (puzzleGrid[row][col] !== null) {
             puzzleGrid[row][col] = null;
             cleared++;
@@ -112,6 +116,7 @@ function createPuzzleByClearingCells(solutionGrid, cellsToClear) {
     }
     return puzzleGrid;
 }
+
 
 // Check if placing a number is safe in a particular cell
 function isSafeToPlace(grid, row, col, num) {
@@ -137,6 +142,8 @@ function isSafeToPlace(grid, row, col, num) {
 // Render the puzzle grid in the HTML
 function renderGrid(puzzleGrid) {
     sudokuGrid.innerHTML = ""; // Clear previous grid if any
+    sudokuGrid.className = ""; // Clear previous classes
+    sudokuGrid.classList.add(`sudoku-grid-${gridSize}x${gridSize}`); // Add class based on grid size
 
     for (let row = 0; row < gridSize; row++) {
         for (let col = 0; col < gridSize; col++) {
@@ -150,6 +157,13 @@ function renderGrid(puzzleGrid) {
                 cell.classList.add("pre-filled"); // Add class for styling
                 cell.readOnly = true; // Make it read-only to prevent editing
             }
+
+            // Apply subgrid borders based on grid size
+            const subGridSize = gridSize === 16 ? 4 : gridSize === 9 ? 3 : 2;
+            if (col % subGridSize === 0) cell.style.borderLeft = "2px solid #333";
+            if (row % subGridSize === 0) cell.style.borderTop = "2px solid #333";
+            if (col === gridSize - 1) cell.style.borderRight = "2px solid #333";
+            if (row === gridSize - 1) cell.style.borderBottom = "2px solid #333";
 
             // Mouse-based selection event
             cell.addEventListener("click", () => {
@@ -182,6 +196,7 @@ function renderGrid(puzzleGrid) {
 
 
 
+
 sudokuGrid.addEventListener("click", event => {
     if (event.target.classList.contains("cell")) {
         selectCell(event.target);
@@ -190,12 +205,13 @@ sudokuGrid.addEventListener("click", event => {
 });
 
 // Utility function to shuffle an array
-function shuffleArray(array) {
+function shuffleArray(array, random) {
     for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
 }
+
 
 
 

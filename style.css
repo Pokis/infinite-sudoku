@@ -1,3 +1,4 @@
+
 body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -32,6 +33,7 @@ button {
     background-color: #333;
 }
 
+/* Default cell styling */
 .cell {
     width: 40px;
     height: 40px;
@@ -41,18 +43,70 @@ button {
     background-color: #fff;
 }
 
+/* 9x9 Grid - 3x3 subgrids */
+.sudoku-grid-9x9 .cell {
+    width: 40px;
+    height: 40px;
+}
+
+.sudoku-grid-9x9 .cell:nth-child(3n+1) {
+    border-left: 2px solid #333;
+}
+
+.sudoku-grid-9x9 .cell:nth-child(-n+3) {
+    border-top: 2px solid #333;
+}
+
+.sudoku-grid-9x9 .cell:nth-child(3n) {
+    border-right: 2px solid #333;
+}
+
+.sudoku-grid-9x9 .cell:nth-child(n+19):nth-child(-n+27),
+.sudoku-grid-9x9 .cell:nth-child(n+46):nth-child(-n+54) {
+    border-bottom: 2px solid #333;
+}
+
+/* 16x16 Grid - 4x4 subgrids */
+.sudoku-grid-16x16 .cell {
+    width: 30px;
+    height: 30px;
+}
+
+/* Apply 4x4 grid borders for 16x16 layout */
+.sudoku-grid-16x16 .cell {
+    border: 1px solid #ddd;
+}
+
+.sudoku-grid-16x16 .cell:nth-child(-n+4),
+.sudoku-grid-16x16 .cell:nth-child(n+61):nth-child(-n+64),
+.sudoku-grid-16x16 .cell:nth-child(n+121):nth-child(-n+124),
+.sudoku-grid-16x16 .cell:nth-child(n+181):nth-child(-n+184) {
+    border-top: 2px solid #333; /* Top border of each 4x4 subgrid */
+}
+
+.sudoku-grid-16x16 .cell:nth-child(4n) {
+    border-right: 2px solid #333; /* Right border of each 4x4 subgrid */
+}
+
+.sudoku-grid-16x16 .cell:nth-child(n+49):nth-child(-n+64),
+.sudoku-grid-16x16 .cell:nth-child(n+113):nth-child(-n+128),
+.sudoku-grid-16x16 .cell:nth-child(n+177):nth-child(-n+192) {
+    border-bottom: 2px solid #333; /* Bottom border of each 4x4 subgrid */
+}
+
+/* Additional styling */
 .conflict {
     background-color: #f8d7da;
     border-color: #dc3545;
-	background-color: #ffcccc !important; 
-}
-
-.cell.conflict {
-    background-color: #ffcccc !important; /* Very light pink for conflicts */
+    background-color: #ffcccc !important;
 }
 
 .hint {
     background-color: #d1ecf1;
+}
+
+.cell.conflict {
+    background-color: #ffcccc !important;
 }
 
 @keyframes shake {
@@ -86,42 +140,24 @@ button {
     font-size: 1em;
 }
 
-
-
-.selection-panel {
-    display: none; /* Start hidden */
-    justify-content: center;
-    gap: 5px;
-    flex-wrap: wrap;
-    max-width: 200px;
-    margin: 20px auto;
-    padding: 10px;
-}
-
-
-
-
 .actions {
     margin-top: 15px;
 }
 
 .hinted {
-    background-color: #e7f3e7; /* Light green to indicate a hint */
-    color: #2a7a2a; /* Darker color to differentiate hint values */
+    background-color: #e7f3e7;
+    color: #2a7a2a;
     font-weight: bold;
 }
 
-/* Highlight the selected cell */
 .cell.selected {
-    background-color: #f0e68c !important; /* Light yellow */
-    border: 2px solid #ffa500 !important; /* Orange border */
+    background-color: #f0e68c !important;
+    border: 2px solid #ffa500 !important;
 }
 
-/* Highlight cells with the same value as the selected cell */
 .cell.matching {
-    background-color: #ccffcc !important; /* Very light green for matching numbers */
+    background-color: #ccffcc !important;
 }
-
 
 .cell.pre-filled {
     background-color: #e9ecef;
