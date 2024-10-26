@@ -77,6 +77,10 @@ button {
     border: 1px solid #ddd;
 }
 
+/* .sudoku-grid-16x16 .cell:nth-child(4n+1) { */
+    /* border-left: 2px solid #333; /* Left border of each 4x4 subgrid */ */
+/* } */
+
 .sudoku-grid-16x16 .cell:nth-child(-n+4),
 .sudoku-grid-16x16 .cell:nth-child(n+61):nth-child(-n+64),
 .sudoku-grid-16x16 .cell:nth-child(n+121):nth-child(-n+124),
