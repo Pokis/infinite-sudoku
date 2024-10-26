@@ -44,6 +44,11 @@ button {
 .conflict {
     background-color: #f8d7da;
     border-color: #dc3545;
+	background-color: #ffcccc !important; 
+}
+
+.cell.conflict {
+    background-color: #ffcccc !important; /* Very light pink for conflicts */
 }
 
 .hint {
@@ -63,14 +68,24 @@ button {
 }
 
 .selection-panel {
-    position: absolute; /* Change to absolute for positioning near cell */
     display: none;
     background-color: #f8f9fa;
     border: 2px solid #333;
     padding: 10px;
     border-radius: 8px;
     z-index: 1000;
+    max-width: 200px;
+    justify-content: center;
+    gap: 5px;
+    flex-wrap: wrap;
 }
+
+.number-button, .selection-panel button {
+    padding: 5px;
+    min-width: 35px;
+    font-size: 1em;
+}
+
 
 
 .selection-panel {
@@ -94,4 +109,23 @@ button {
     background-color: #e7f3e7; /* Light green to indicate a hint */
     color: #2a7a2a; /* Darker color to differentiate hint values */
     font-weight: bold;
+}
+
+/* Highlight the selected cell */
+.cell.selected {
+    background-color: #f0e68c !important; /* Light yellow */
+    border: 2px solid #ffa500 !important; /* Orange border */
+}
+
+/* Highlight cells with the same value as the selected cell */
+.cell.matching {
+    background-color: #ccffcc !important; /* Very light green for matching numbers */
+}
+
+
+.cell.pre-filled {
+    background-color: #e9ecef;
+    color: #495057;
+    font-weight: bold;
+    user-select: none;
 }

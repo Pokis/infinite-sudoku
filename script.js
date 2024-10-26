@@ -23,6 +23,7 @@ const difficultyLevels = {
 function initializeGame() {
     setLevel(1); // Start with Level 1
     setSeed(); // Set the initial seed value
+	addCellEventListeners();
 }
 
 // Call initializeGame when the page finishes loading
@@ -31,6 +32,7 @@ window.onload = initializeGame;
 function setLevel(level) {
     currentLevelDisplay.textContent = difficultyLevels[level].name;
     generateSudoku(level);
+    createSelectionPanel(); // Ensure panel buttons align with current grid size
     resetGameState();
 }
 
@@ -132,38 +134,41 @@ function isSafeToPlace(grid, row, col, num) {
 }
 
 
-
 // Render the puzzle grid in the HTML
 function renderGrid(puzzleGrid) {
+    sudokuGrid.innerHTML = ""; // Clear previous grid if any
+
     for (let row = 0; row < gridSize; row++) {
         for (let col = 0; col < gridSize; col++) {
             const cell = document.createElement("input");
             cell.type = "text";
             cell.className = "cell";
-            cell.dataset.grid = `${gridSize}x${gridSize}`;
             cell.maxLength = 2;
 
             if (puzzleGrid[row][col] !== null) {
                 cell.value = puzzleGrid[row][col];
-                cell.disabled = true; // Disable pre-filled cells
+                cell.classList.add("pre-filled"); // Add class for styling
+                cell.readOnly = true; // Make it read-only to prevent editing
             }
 
-            cell.onmousedown = (event) => {
-                event.preventDefault(); // Prevent focus switch issues
-                currentFocusedCell = cell;
-                showSelectionPanel(cell); // Show selection panel on click
-            };
-            cell.oninput = () => validateInput(cell);
-
-            const subGridRow = Math.floor(row / Math.sqrt(gridSize));
-            const subGridCol = Math.floor(col / Math.sqrt(gridSize));
-            cell.style.backgroundColor = (subGridRow + subGridCol) % 2 === 0 ? "#f0f0f0" : "#ffffff";
-
+            cell.addEventListener("click", () => {
+                if (!cell.classList.contains("pre-filled")) { // Allow selection only for non-predefined cells
+                    selectCell(cell);
+                    showSelectionPanel();
+                }
+            });
             sudokuGrid.appendChild(cell);
         }
     }
-    document.getElementById("result").textContent = "";
 }
+
+
+sudokuGrid.addEventListener("click", event => {
+    if (event.target.classList.contains("cell")) {
+        selectCell(event.target);
+        showSelectionPanel(); // Display panel when a cell is selected
+    }
+});
 
 // Utility function to shuffle an array
 function shuffleArray(array) {
@@ -216,51 +221,108 @@ function handleCellBlur() {
     }, 200);
 }
 
-// Event listener to show selection panel on cell click
+
+function addCellEventListeners() {
+    const cells = Array.from(sudokuGrid.children);
+    cells.forEach(cell => {
+        cell.addEventListener("click", () => {
+            selectCell(cell); // Call selectCell on click
+            showSelectionPanel();
+        });
+    });
+}
+
+function selectCell(cell) {
+    clearHighlights(); // Clear any previous highlights
+    cell.classList.add("selected"); // Highlight the selected cell
+
+    const selectedValue = cell.value;
+    if (selectedValue) {
+        highlightMatchingNumbers(selectedValue); // Highlight all cells with the same value
+    }
+
+    currentFocusedCell = cell; // Set the current focused cell for future actions
+}
+
+// Highlight all cells with the same value as the selected cell
+function highlightMatchingNumbers(value) {
+    const cells = Array.from(sudokuGrid.children);
+    cells.forEach(cell => {
+        if (cell.value === value && value) {
+            if (isConflicting(cell)) {
+                cell.classList.add("conflict");
+            } else {
+                cell.classList.add("matching");
+            }
+        }
+    });
+}
+
 sudokuGrid.addEventListener("click", event => {
     if (event.target.classList.contains("cell")) {
-        currentFocusedCell = event.target;
-        showSelectionPanel();
+        selectCell(event.target);
+        showSelectionPanel(); // Show the panel after selecting a cell
     }
 });
 
+// Clear all highlights when selection changes or action completes
+function clearHighlights() {
+    const cells = Array.from(sudokuGrid.children);
+    cells.forEach(cell => cell.classList.remove("selected", "matching"));
+}
+
+
 // Function to show the selection panel
 function showSelectionPanel() {
+    console.log("Showing selection panel"); // Debug log
     selectionPanel.style.display = "flex";
 }
 
 // Adjust createSelectionPanel to add closing functionality after "Clear"
-function createSelectionPanel(size) {
-    selectionPanel.innerHTML = ''; // Clear existing content
+function createSelectionPanel(size = gridSize) {
+    selectionPanel.innerHTML = ''; // Clear previous buttons
 
-    // Add number buttons
+    // Generate number buttons based on grid size
     for (let i = 1; i <= size; i++) {
         const button = document.createElement("button");
         button.textContent = i;
-        button.onclick = () => fillCell(i);
+        button.onclick = () => fillCell(i); // Fill cell with selected number
+        button.classList.add("number-button");
         selectionPanel.appendChild(button);
     }
 
-    // Add a "Clear" button that also hides the panel
+    // Add a "Clear" button with a check for predefined cells
     const clearButton = document.createElement("button");
     clearButton.textContent = "Clear";
     clearButton.onclick = () => {
-        if (currentFocusedCell) {
-            currentFocusedCell.value = "";
+        if (currentFocusedCell && !currentFocusedCell.classList.contains("pre-filled")) {
+            currentFocusedCell.value = ""; // Only clear if not predefined
+            clearHighlights(); // Clear highlights
             selectionPanel.style.display = "none"; // Hide panel after clearing
         }
     };
     selectionPanel.appendChild(clearButton);
 }
 
+
+
+
+
 // Fill cell and close the panel after selection
 function fillCell(value) {
-    if (currentFocusedCell) {
-        recordMove(currentFocusedCell, currentFocusedCell.value); // Record the move as an entry
+    if (currentFocusedCell && !currentFocusedCell.classList.contains("pre-filled")) {
+        recordMove(currentFocusedCell, currentFocusedCell.value); // Record move for undo
         currentFocusedCell.value = value;
-        selectionPanel.style.display = "none";
+        
+        // Clear existing highlights and re-check conflicts
+        clearHighlights();
+        checkConflicts(currentFocusedCell); // Highlight conflicts immediately
+        
+        selectionPanel.style.display = "none"; // Hide panel after selection
     }
 }
+
+
 
 
 
@@ -376,6 +438,41 @@ function getPossibleValues(cell, cells, subGridSize) {
     return possibleValues;
 }
 
+// Check if the given cell has conflicts in its row, column, or subgrid
+function isConflicting(cell) {
+    const cells = Array.from(sudokuGrid.children);
+    const cellIndex = cells.indexOf(cell);
+    const row = Math.floor(cellIndex / gridSize);
+    const col = cellIndex % gridSize;
+    const subGridSize = Math.sqrt(gridSize);
+    const value = cell.value;
+
+    // Check for conflicts in the row, column, and subgrid
+    for (let i = 0; i < gridSize; i++) {
+        const rowCell = cells[row * gridSize + i];
+        const colCell = cells[i * gridSize + col];
+
+        // Conflict in the same row or column
+        if ((rowCell !== cell && rowCell.value === value) || (colCell !== cell && colCell.value === value)) {
+            return true;
+        }
+    }
+
+    // Check for conflicts in the subgrid
+    const startRow = row - (row % subGridSize);
+    const startCol = col - (col % subGridSize);
+
+    for (let r = startRow; r < startRow + subGridSize; r++) {
+        for (let c = startCol; c < startCol + subGridSize; c++) {
+            const subGridCell = cells[r * gridSize + c];
+            if (subGridCell !== cell && subGridCell.value === value) {
+                return true; // Conflict found in the subgrid
+            }
+        }
+    }
+
+    return false; // No conflict found
+}
 
 
 
@@ -402,6 +499,7 @@ function checkConflicts(cell) {
         }
     });
 }
+
 
 function clearConflictHighlights() {
     const cells = Array.from(sudokuGrid.children);
