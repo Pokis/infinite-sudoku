@@ -1,0 +1,95 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+}
+
+.controls, .score {
+    margin: 20px 0;
+}
+
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+#sudoku-grid {
+    display: grid;
+    gap: 1px;
+    margin: 20px auto;
+    padding: 5px;
+    border: 2px solid #333;
+    background-color: #333;
+}
+
+.cell {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2em;
+    text-align: center;
+    border: 1px solid #ddd;
+    background-color: #fff;
+}
+
+.conflict {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+}
+
+.hint {
+    background-color: #d1ecf1;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+
+.error {
+    animation: shake 0.3s ease;
+}
+
+.selection-panel {
+    position: absolute; /* Change to absolute for positioning near cell */
+    display: none;
+    background-color: #f8f9fa;
+    border: 2px solid #333;
+    padding: 10px;
+    border-radius: 8px;
+    z-index: 1000;
+}
+
+
+.selection-panel {
+    position: absolute; 
+    display: none;
+    background-color: #f8f9fa;
+    border: 2px solid #333;
+    padding: 10px;
+    border-radius: 8px;
+    z-index: 1000;
+}
+
+
+.actions {
+    margin-top: 15px;
+}
+
+.hinted {
+    background-color: #e7f3e7; /* Light green to indicate a hint */
+    color: #2a7a2a; /* Darker color to differentiate hint values */
+    font-weight: bold;
+}
