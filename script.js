@@ -151,16 +151,35 @@ function renderGrid(puzzleGrid) {
                 cell.readOnly = true; // Make it read-only to prevent editing
             }
 
+            // Mouse-based selection event
             cell.addEventListener("click", () => {
                 if (!cell.classList.contains("pre-filled")) { // Allow selection only for non-predefined cells
                     selectCell(cell);
                     showSelectionPanel();
                 }
             });
+
+            // Capture the original value on focus
+            cell.addEventListener("focus", () => {
+                if (!cell.classList.contains("pre-filled")) {
+                    cell.dataset.originalValue = cell.value; // Store the original value
+                }
+            });
+
+            // Handle keyboard input changes
+            cell.addEventListener("input", () => {
+                if (!cell.classList.contains("pre-filled")) {
+                    recordMove(cell, cell.dataset.originalValue); // Use the stored original value for undo
+                    checkConflicts(cell); // Immediately check for conflicts
+                    delete cell.dataset.originalValue; // Clear stored value after recording
+                }
+            });
+
             sudokuGrid.appendChild(cell);
         }
     }
 }
+
 
 
 sudokuGrid.addEventListener("click", event => {
@@ -336,18 +355,20 @@ function recordMove(cell, oldValue, isHint = false) {
 }
 
 function undoMove() {
-    if (movesStack.length === 0) return; // Nothing to undo
+    if (movesStack.length === 0) return; // No moves to undo
 
     const lastMove = movesStack.pop();
-    lastMove.cell.value = lastMove.oldValue; // Restore the old value
+    lastMove.cell.value = lastMove.oldValue; // Revert to the previous value
 
-    // Remove hint styles if the last move was a hint
-    if (lastMove.wasHint) {
-        lastMove.cell.classList.remove("hinted", "hint");
-    }
-    
-    clearConflictHighlights();
-    checkConflicts(lastMove.cell);
+    // Clear all highlights and reapply conflicts across the entire grid
+    clearHighlights();
+    applyConflictHighlights();
+}
+
+// Function to apply conflict highlights across the entire grid
+function applyConflictHighlights() {
+    const cells = Array.from(sudokuGrid.children);
+    cells.forEach(cell => checkConflicts(cell)); // Apply conflict check to all cells
 }
 
 
@@ -478,27 +499,44 @@ function isConflicting(cell) {
 
 function checkConflicts(cell) {
     const value = cell.value;
-    if (!value) return;
-
     const cells = Array.from(sudokuGrid.children);
     const row = Math.floor(cells.indexOf(cell) / gridSize);
     const col = cells.indexOf(cell) % gridSize;
     const subGridSize = Math.sqrt(gridSize);
 
+    // Remove conflict highlight if cell is empty
+    if (!value) {
+        cell.classList.remove("conflict");
+        return; // Exit early if cell is empty
+    }
+
+    let hasConflict = false;
+
     cells.forEach((otherCell, index) => {
+        if (otherCell === cell || !otherCell.value) return; // Skip self and empty cells
+
         const otherRow = Math.floor(index / gridSize);
         const otherCol = index % gridSize;
         const inSameRow = otherRow === row;
         const inSameCol = otherCol === col;
-        const inSameSubGrid = Math.floor(otherRow / subGridSize) === Math.floor(row / subGridSize) &&
-                              Math.floor(otherCol / subGridSize) === Math.floor(col / subGridSize);
+        const inSameSubGrid =
+            Math.floor(otherRow / subGridSize) === Math.floor(row / subGridSize) &&
+            Math.floor(otherCol / subGridSize) === Math.floor(col / subGridSize);
 
-        if ((inSameRow || inSameCol || inSameSubGrid) && otherCell.value === value && otherCell !== cell) {
+        if ((inSameRow || inSameCol || inSameSubGrid) && otherCell.value === value) {
+            hasConflict = true;
             otherCell.classList.add("conflict");
             cell.classList.add("conflict");
         }
     });
+
+    // Remove conflict if no other conflicts were found
+    if (!hasConflict) {
+        cell.classList.remove("conflict");
+    }
 }
+
+
 
 
 function clearConflictHighlights() {
