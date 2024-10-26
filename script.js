@@ -216,72 +216,72 @@ function handleCellBlur() {
     }, 200);
 }
 
-function showSelectionPanel(cell) {
+// Event listener to show selection panel on cell click
+sudokuGrid.addEventListener("click", event => {
+    if (event.target.classList.contains("cell")) {
+        currentFocusedCell = event.target;
+        showSelectionPanel();
+    }
+});
+
+// Function to show the selection panel
+function showSelectionPanel() {
     selectionPanel.style.display = "flex";
-    selectionPanel.style.left = `${cell.offsetLeft}px`;
-    selectionPanel.style.top = `${cell.offsetTop + 50}px`;
 }
 
-
+// Adjust createSelectionPanel to add closing functionality after "Clear"
 function createSelectionPanel(size) {
     selectionPanel.innerHTML = ''; // Clear existing content
 
-    // Add "Clear" button at the top of the panel
+    // Add number buttons
+    for (let i = 1; i <= size; i++) {
+        const button = document.createElement("button");
+        button.textContent = i;
+        button.onclick = () => fillCell(i);
+        selectionPanel.appendChild(button);
+    }
+
+    // Add a "Clear" button that also hides the panel
     const clearButton = document.createElement("button");
     clearButton.textContent = "Clear";
     clearButton.onclick = () => {
         if (currentFocusedCell) {
-            // Clear the cell's value and remove hint or conflict styles
             currentFocusedCell.value = "";
-            currentFocusedCell.classList.remove("hinted", "conflict");
-            clearConflictHighlights();
-            selectionPanel.style.display = "none"; // Hide the selection panel after clearing
+            selectionPanel.style.display = "none"; // Hide panel after clearing
         }
     };
     selectionPanel.appendChild(clearButton);
-
-    // Add number buttons from 1 to grid size
-    for (let i = 1; i <= size; i++) {
-        const button = document.createElement("button");
-        button.textContent = i;
-        button.onclick = () => {
-            isInteractingWithPanel = true;
-            fillCell(i);
-        };
-        selectionPanel.appendChild(button);
-    }
 }
 
-
-
+// Fill cell and close the panel after selection
 function fillCell(value) {
     if (currentFocusedCell) {
-        recordMove(currentFocusedCell, currentFocusedCell.value);
+        recordMove(currentFocusedCell, currentFocusedCell.value); // Record the move as an entry
         currentFocusedCell.value = value;
-        clearConflictHighlights();
-        checkConflicts(currentFocusedCell);
-        selectionPanel.style.display = "none"; // Hide the selection panel
+        selectionPanel.style.display = "none";
     }
 }
 
 
 
-
-
-
-function recordMove(cell, oldValue) {
-    movesStack.push({ cell, oldValue });
+function recordMove(cell, oldValue, isHint = false) {
+    movesStack.push({
+        cell: cell,
+        oldValue: oldValue,
+        newValue: cell.value,
+        wasHint: isHint
+    });
 }
 
 function undoMove() {
-    if (movesStack.length === 0) return;
+    if (movesStack.length === 0) return; // Nothing to undo
 
     const lastMove = movesStack.pop();
-    lastMove.cell.value = lastMove.oldValue;
-    
-    // Remove `.hinted` class if the cell is empty after undo
-    if (!lastMove.cell.value) {
-        lastMove.cell.classList.remove("hinted");
+    lastMove.cell.value = lastMove.oldValue; // Restore the old value
+
+    // Remove hint styles if the last move was a hint
+    if (lastMove.wasHint) {
+        lastMove.cell.classList.remove("hinted", "hint");
     }
     
     clearConflictHighlights();
@@ -301,32 +301,21 @@ function giveHint() {
 
         const possibleValues = getPossibleValues(cell, cells, subGridSize);
 
-        // Only consider cells with exactly one valid option
-        if (possibleValues.size === 1) {
+        if (possibleValues.size > 0 && possibleValues.size < minOptions) {
             minOptions = possibleValues.size;
             cellToHint = cell;
             cellToHint.possibleValues = Array.from(possibleValues);
-            break; // Exit early if we find a cell with a single option
         }
     }
 
-    // Apply the hint if a valid, solvable hint is found
-    if (cellToHint && cellToHint.possibleValues.length === 1) {
+    if (cellToHint && cellToHint.possibleValues.length > 0) {
         const hintValue = cellToHint.possibleValues[0];
+        
+        // Record the hint move with a flag to distinguish it
+        recordMove(cellToHint, cellToHint.value, true);
+        
         cellToHint.value = hintValue;
-
-        // Validate that the hint maintains unique solvability
-        if (hasUniqueSolution(cells)) {
-            cellToHint.classList.add("hint", "hinted");
-            recordMove(cellToHint, "");
-            score = Math.max(score - 1, 0);
-            scoreDisplay.textContent = score;
-            return;
-        }
-
-        // Revert if no unique solution exists
-        cellToHint.value = "";
-        document.getElementById("result").textContent = "No valid hints available without breaking solvability.";
+        cellToHint.classList.add("hint", "hinted");
     } else {
         document.getElementById("result").textContent = "No further hints available.";
     }

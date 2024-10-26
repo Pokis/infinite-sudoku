@@ -74,14 +74,16 @@ button {
 
 
 .selection-panel {
-    position: absolute; 
-    display: none;
-    background-color: #f8f9fa;
-    border: 2px solid #333;
+    display: none; /* Start hidden */
+    justify-content: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    max-width: 200px;
+    margin: 20px auto;
     padding: 10px;
-    border-radius: 8px;
-    z-index: 1000;
 }
+
+
 
 
 .actions {
